@@ -286,7 +286,7 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
             f"{yellow}Warning: unable to parse the dependency list in {setup_py_path}{color_reset}"
         )
         return set()
-    # there's still a chance it's a list comprehension or a literal list with string variables
+    # there's still a chance the contents of the list are not literal values
     dep_list_start: int = i
     i += 1
 

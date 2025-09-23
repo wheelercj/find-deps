@@ -15,3 +15,13 @@ $ find-deps py mypy black
 ```
 
 Find-deps searches dependency files like `package-lock.json` and `pyproject.toml` by parsing the files and scanning their dependency lists.
+
+## Install
+
+3 ways to install:
+
+- Download or copy [main.py](https://github.com/wheelercj/find-deps/blob/main/main.py) and run it. I've been using Python 3.13, but it might work with Python 3.12 as well.
+- `uv tool install git+https://github.com/wheelercj/find-deps@main` and then `find-deps --help`
+- `git clone https://github.com/wheelercj/find-deps.git` and then `python3.13 find-deps/main.py --help`
+
+Find-deps has no third-party dependencies.

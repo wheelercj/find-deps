@@ -246,9 +246,11 @@ def get_py_setup_cfg_deps(setup_cfg_path: Path, verbose: bool) -> set[str]:
         return set()
 
     reqs_s: str = config["options"]["install_requires"]
-    assert isinstance(reqs_s, str), f"Unexpected {type(reqs_s).__name__}"
-    reqs: list[str] = reqs_s.splitlines()
+    if not isinstance(reqs_s, str):
+        print(f"{red}Error: unexpected {type(reqs_s).__name__} in {setup_cfg_path}{color_reset}")
+        return set()
 
+    reqs: list[str] = reqs_s.splitlines()
     deps: set[str] = get_py_dep_names(reqs, verbose)
     return deps
 
@@ -431,8 +433,13 @@ def get_py_dep_names(dep_spec_list: list[str] | list[str | dict], verbose: bool)
             continue
 
         spec_match: re.Match | None = py_dep_spec_pattern.match(dep_spec)
-        assert spec_match, f'"{dep_spec}" did not match the dependency specification pattern'
-        deps.add(spec_match["name"])
+        if spec_match:
+            deps.add(spec_match["name"])
+        else:
+            print(
+                f'{red}Error: "{dep_spec}" did not match the dependency specification'
+                f" pattern{color_reset}"
+            )
 
         # if spec_match["extras"]:
         #     extras_s: str = str(spec_match["extras"]).strip("[]").strip()

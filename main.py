@@ -180,7 +180,7 @@ def file_naively_contains(file_path: Path, deps: set[str]) -> set[str]:
     try:
         contents: str = file_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {file_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when reading {file_path}{color_reset}')
         return set()
 
     return set(dep for dep in deps if dep in contents)
@@ -196,7 +196,7 @@ def get_pyproject_deps(pyproject_path: Path, verbose: bool) -> set[str]:
             pyproject_path.read_text(encoding="utf8", errors="ignore")
         )
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {pyproject_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when reading {pyproject_path}{color_reset}')
         return set()
 
     if "project" in pyproject:
@@ -228,7 +228,7 @@ def get_py_setup_cfg_deps(setup_cfg_path: Path, verbose: bool) -> set[str]:
     try:
         contents: str = setup_cfg_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {setup_cfg_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when reading {setup_cfg_path}{color_reset}')
         return set()
     if not contents:
         return set()
@@ -237,7 +237,7 @@ def get_py_setup_cfg_deps(setup_cfg_path: Path, verbose: bool) -> set[str]:
     try:
         config.read_string(contents)
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when loading {setup_cfg_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when loading {setup_cfg_path}{color_reset}')
         return set()
 
     if "options" not in config:
@@ -263,7 +263,7 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
     try:
         contents: str = setup_py_path.read_text(encoding="utf8", errors="ignore").strip()
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {setup_py_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when reading {setup_py_path}{color_reset}')
         return set()
     if not contents:
         return set()
@@ -368,7 +368,7 @@ def get_pip_req_deps(
             encoding="utf8", errors="ignore"
         ).splitlines()
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {dep_file_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when reading {dep_file_path}{color_reset}')
         return defaultdict()
 
     for line in req_lines:
@@ -453,7 +453,7 @@ def get_js_package_json_deps(file_path: Path, verbose: bool) -> set[str]:
     try:
         text: str = file_path.read_text(encoding="utf8", errors="ignore").strip()
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {file_path}')
+        print(f'{red}"{type(err).__name__}: {err}" when reading {file_path}{color_reset}')
         return set()
     if not text:
         return set()
@@ -462,7 +462,7 @@ def get_js_package_json_deps(file_path: Path, verbose: bool) -> set[str]:
         pkg: dict[str, Any] = json.loads(text)
     except Exception as err:
         if verbose:
-            print(f'"{type(err).__name__}: {err}" when loading JSON from {file_path}')
+            print(f'{red}"{type(err).__name__}: {err}" when loading {file_path}{color_reset}')
         return set()
     else:
         if pkg:
@@ -480,7 +480,10 @@ def get_js_package_lock_deps(package_lock_file_path: Path) -> set[str]:
     try:
         contents: str = package_lock_file_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when reading {package_lock_file_path}')
+        print(
+            f'{red}"{type(err).__name__}: {err}" when reading'
+            f" {package_lock_file_path}{color_reset}"
+        )
         return set()
     if not contents:
         return set()
@@ -488,7 +491,10 @@ def get_js_package_lock_deps(package_lock_file_path: Path) -> set[str]:
     try:
         pkg_lock: dict[str, Any] = json.loads(contents)
     except Exception as err:
-        print(f'"{type(err).__name__}: {err}" when loading {package_lock_file_path}')
+        print(
+            f'{red}"{type(err).__name__}: {err}" when loading'
+            f" {package_lock_file_path}{color_reset}"
+        )
         return set()
 
     if "packages" in pkg_lock:

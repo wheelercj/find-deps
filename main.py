@@ -23,6 +23,11 @@ from typing import Any
 from typing import Literal
 
 
+# https://chriswheeler.dev/posts/how-to-use-colors-in-terminals/
+color_reset: str = "\x1b[0m"
+yellow: str = "\x1b[33m"
+red: str = "\x1b[31m"
+
 # https://packaging.python.org/en/latest/specifications/dependency-specifiers/#grammar
 py_dep_spec_pattern: re.Pattern = re.compile(
     r"^\s*(?P<name>[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?)\b\s*(?P<extras>\[[^\[\]]*\])?\s*(?:@.+|(?P<versionspec>[\(<>=!~][^;]*)?).*"
@@ -49,6 +54,7 @@ def main():
     parser.add_argument("language", choices=language_choices)
     parser.add_argument("deps", action="extend", nargs="+", type=str)
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--no-ansi", action="store_true", help="omit ANSI escape codes")
     parser.add_argument(
         "--exclude",
         action="append",
@@ -66,8 +72,17 @@ def main():
     language: Language = args.language
     deps: set[str] = set(args.deps)
     verbose: bool = args.verbose
+    no_ansi: bool = args.no_ansi
     excludes: list[str] = args.exclude
     pip_req_file_names: list[str] = [x.lower() for x in args.pip_req]
+
+    if no_ansi:
+        global color_reset
+        color_reset = ""
+        global yellow
+        yellow = ""
+        global red
+        red = ""
 
     dep_file_names: list[str] = []
     match language:
@@ -266,7 +281,9 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
         i += 1
     if contents[i] != "[":
         # it's not a literal list
-        print(f"Warning: unable to parse the dependency list in {setup_py_path}")
+        print(
+            f"{yellow}Warning: unable to parse the dependency list in {setup_py_path}{color_reset}"
+        )
         return set()
     # there's still a chance it's a list comprehension or a literal list with string variables
     dep_list_start: int = i
@@ -330,7 +347,10 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
             missed_deps = True
 
     if missed_deps:
-        print(f"Warning: could not fully parse the dependency list in {setup_py_path}")
+        print(
+            f"{yellow}Warning: could not fully parse the dependency list in"
+            f" {setup_py_path}{color_reset}"
+        )
 
     return set(deps)
 
@@ -373,8 +393,8 @@ def get_pip_req_deps(
                         )
                 elif len(Path(reffed_req_name).parts) > 1:
                     print(
-                        "Error: unexpected directory separator in pip requirements file reference"
-                        f" in {dep_file_path}"
+                        f"{red}Error: unexpected directory separator in pip requirements file"
+                        f" reference in {dep_file_path}{color_reset}"
                     )
                 else:
                     reffed_req_path: Path = dep_file_path.parent / reffed_req_name
@@ -401,7 +421,10 @@ def get_py_dep_names(dep_spec_list: list[str] | list[str | dict], verbose: bool)
             continue
         if not isinstance(dep_spec, str):
             if verbose:
-                print(f"Warning: unexpected {type(dep_spec).__name__} in dependency list")
+                print(
+                    f"{yellow}Warning: unexpected {type(dep_spec).__name__} in dependency"
+                    f" list{color_reset}"
+                )
             continue
         if not dep_spec.strip():
             continue

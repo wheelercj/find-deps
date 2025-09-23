@@ -50,6 +50,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="find-deps",
         description="Search all JavaScript or Python dependency lists on your device",
+        epilog="For more info, visit https://github.com/wheelercj/find-deps",
     )
     parser.add_argument("language", choices=language_choices)
     parser.add_argument("deps", action="extend", nargs="+", type=str)

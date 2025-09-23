@@ -38,7 +38,7 @@ language_choices: list[Language] = [
     "js",
 ]
 
-type NestedStrDict = dict[str, str | NestedStrDict]
+type NestedStrDict = dict[str, str | NestedStrDict]  # requires Python 3.12 or newer
 
 
 def main():

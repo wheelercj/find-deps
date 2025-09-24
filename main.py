@@ -16,6 +16,7 @@ import argparse
 import configparser
 import json
 import re
+import sys
 import tomllib
 from collections import defaultdict
 from pathlib import Path
@@ -45,8 +46,12 @@ language_choices: list[Language] = [
 
 type NestedStrDict = dict[str, str | NestedStrDict]  # requires Python 3.12 or newer
 
+searched_file_count: int = 0
+
 
 def main():
+    global searched_file_count
+
     parser = argparse.ArgumentParser(
         prog="find-deps",
         description="Search all JavaScript or Python dependency lists on your device",
@@ -171,6 +176,14 @@ def main():
                     for match in matches:
                         deps_map[match].append(dep_file_path)
 
+            searched_file_count += 1
+            if not verbose and sys.stdout.isatty():
+                print(end="\r                                                  \r")
+                print(end=f"Searched {searched_file_count} dependency list files", flush=True)
+
+    if not verbose and sys.stdout.isatty():
+        print(end="\r                                                  \r")
+    print(f"Searched {searched_file_count} dependency list files")
     for dep_name, dep_file_paths in deps_map.items():
         print(f'"{dep_name}" found in {len(dep_file_paths)} files:')
         for p in dep_file_paths:
@@ -380,6 +393,7 @@ def get_pip_req_deps(
     dep_file_path: Path, verbose: bool, excludes: list[str], pip_req_file_names: list[str]
 ) -> defaultdict[str, list[Path]]:
     """Gets the names of all dependencies listed in a pip requirements.txt & others it references"""
+    global searched_file_count
     # https://pip.pypa.io/en/stable/reference/requirements-file-format/
     deps_map: defaultdict[str, list[Path]] = defaultdict(list)  # dep name -> dep file paths
 
@@ -429,6 +443,7 @@ def get_pip_req_deps(
                 deps_map.update(
                     get_pip_req_deps(reffed_req_path, verbose, excludes, pip_req_file_names)
                 )
+                searched_file_count += 1
 
     return deps_map
 

@@ -114,60 +114,62 @@ def main():
             continue
 
         for dep_file_name in dep_file_names:
-            if dep_file_name in filenames:
-                dep_file_path: Path = dirpath / dep_file_name
+            if dep_file_name not in filenames:
+                continue
 
-                match dep_file_name.lower():
-                    case "pyproject.toml":
-                        if verbose:
-                            print(f"Searching {dep_file_path}")
-                        pyp_deps: set[str] = get_pyproject_deps(dep_file_path, verbose)
-                        matches: set[str] = deps.intersection(pyp_deps)
-                        for match in matches:
-                            deps_map[match].append(dep_file_path)
-                    case "setup.cfg":
-                        if verbose:
-                            print(f"Searching {dep_file_path}")
-                        setup_cfg_deps: set[str] = get_py_setup_cfg_deps(dep_file_path, verbose)
-                        matches: set[str] = deps.intersection(setup_cfg_deps)
-                        for match in matches:
-                            deps_map[match].append(dep_file_path)
-                    case "setup.py":
-                        if verbose:
-                            print(f"Searching {dep_file_path}")
-                        setup_py_deps: set[str] = get_setup_py_deps(dep_file_path)
-                        matches: set[str] = deps.intersection(setup_py_deps)
-                        for match in matches:
-                            deps_map[match].append(dep_file_path)
-                    case x if x in pip_req_file_names:
-                        if verbose:
-                            print(f"Searching {dep_file_path}")
-                        req_deps: defaultdict[str, list[Path]] = get_pip_req_deps(
-                            dep_file_path, verbose, excludes, pip_req_file_names
-                        )
-                        matches: set[str] = deps.intersection(req_deps.keys())
-                        for match in matches:
-                            deps_map[match].extend(req_deps[match])
-                    case "package.json":
-                        if verbose:
-                            print(f"Searching {dep_file_path}")
-                        pkg_deps: set[str] = get_js_package_json_deps(dep_file_path)
-                        matches: set[str] = deps.intersection(pkg_deps)
-                        for match in matches:
-                            deps_map[match].append(dep_file_path)
-                    case "package-lock.json" | "npm-shrinkwrap.json":
-                        if verbose:
-                            print(f"Searching {dep_file_path}")
-                        pl_deps: set[str] = get_js_package_lock_deps(dep_file_path)
-                        matches: set[str] = deps.intersection(pl_deps)
-                        for match in matches:
-                            deps_map[match].append(dep_file_path)
-                    case _:
-                        if verbose:
-                            print(f"Naively searching {dep_file_path}")
-                        matches: set[str] = file_naively_contains(dep_file_path, deps)
-                        for match in matches:
-                            deps_map[match].append(dep_file_path)
+            dep_file_path: Path = dirpath / dep_file_name
+
+            match dep_file_name.lower():
+                case "pyproject.toml":
+                    if verbose:
+                        print(f"Searching {dep_file_path}")
+                    pyp_deps: set[str] = get_pyproject_deps(dep_file_path, verbose)
+                    matches: set[str] = deps.intersection(pyp_deps)
+                    for match in matches:
+                        deps_map[match].append(dep_file_path)
+                case "setup.cfg":
+                    if verbose:
+                        print(f"Searching {dep_file_path}")
+                    setup_cfg_deps: set[str] = get_py_setup_cfg_deps(dep_file_path, verbose)
+                    matches: set[str] = deps.intersection(setup_cfg_deps)
+                    for match in matches:
+                        deps_map[match].append(dep_file_path)
+                case "setup.py":
+                    if verbose:
+                        print(f"Searching {dep_file_path}")
+                    setup_py_deps: set[str] = get_setup_py_deps(dep_file_path)
+                    matches: set[str] = deps.intersection(setup_py_deps)
+                    for match in matches:
+                        deps_map[match].append(dep_file_path)
+                case x if x in pip_req_file_names:
+                    if verbose:
+                        print(f"Searching {dep_file_path}")
+                    req_deps: defaultdict[str, list[Path]] = get_pip_req_deps(
+                        dep_file_path, verbose, excludes, pip_req_file_names
+                    )
+                    matches: set[str] = deps.intersection(req_deps.keys())
+                    for match in matches:
+                        deps_map[match].extend(req_deps[match])
+                case "package.json":
+                    if verbose:
+                        print(f"Searching {dep_file_path}")
+                    pkg_deps: set[str] = get_js_package_json_deps(dep_file_path)
+                    matches: set[str] = deps.intersection(pkg_deps)
+                    for match in matches:
+                        deps_map[match].append(dep_file_path)
+                case "package-lock.json" | "npm-shrinkwrap.json":
+                    if verbose:
+                        print(f"Searching {dep_file_path}")
+                    pl_deps: set[str] = get_js_package_lock_deps(dep_file_path)
+                    matches: set[str] = deps.intersection(pl_deps)
+                    for match in matches:
+                        deps_map[match].append(dep_file_path)
+                case _:
+                    if verbose:
+                        print(f"Naively searching {dep_file_path}")
+                    matches: set[str] = file_naively_contains(dep_file_path, deps)
+                    for match in matches:
+                        deps_map[match].append(dep_file_path)
 
     for dep_name, dep_file_paths in deps_map.items():
         print(f'"{dep_name}" found in {len(dep_file_paths)} files:')
@@ -396,35 +398,37 @@ def get_pip_req_deps(
             deps_map[dep_name].append(dep_file_path)
         else:
             ref_match: re.Match | None = pip_file_ref_pattern.match(line.strip())
-            if ref_match:
-                reffed_req_name: str = ref_match[1]
-                if reffed_req_name in pip_req_file_names:
-                    if verbose:
-                        print(
-                            f"{reffed_req_name} referenced but skipped this time because it's"
-                            " already in the list of file names to search"
-                        )
-                elif reffed_req_name in excludes:
-                    if verbose:
-                        print(
-                            f"{reffed_req_name} referenced but skipped because it's in the"
-                            " excludes list"
-                        )
-                elif len(Path(reffed_req_name).parts) > 1:
+            if not ref_match:
+                continue
+
+            reffed_req_name: str = ref_match[1]
+            if reffed_req_name in pip_req_file_names:
+                if verbose:
                     print(
-                        f"{red}Error: unexpected directory separator in pip requirements file"
-                        f" reference in {dep_file_path}{color_reset}"
+                        f"{reffed_req_name} referenced but skipped this time because it's"
+                        " already in the list of file names to search"
                     )
-                else:
-                    reffed_req_path: Path = dep_file_path.parent / reffed_req_name
-                    if verbose:
-                        print(
-                            f"{reffed_req_name} referenced in {dep_file_path}\n"
-                            f"    Searching {reffed_req_path}"
-                        )
-                    deps_map.update(
-                        get_pip_req_deps(reffed_req_path, verbose, excludes, pip_req_file_names)
+            elif reffed_req_name in excludes:
+                if verbose:
+                    print(
+                        f"{reffed_req_name} referenced but skipped because it's in the"
+                        " excludes list"
                     )
+            elif len(Path(reffed_req_name).parts) > 1:
+                print(
+                    f"{red}Error: unexpected directory separator in pip requirements file"
+                    f" reference in {dep_file_path}{color_reset}"
+                )
+            else:
+                reffed_req_path: Path = dep_file_path.parent / reffed_req_name
+                if verbose:
+                    print(
+                        f"{reffed_req_name} referenced in {dep_file_path}\n"
+                        f"    Searching {reffed_req_path}"
+                    )
+                deps_map.update(
+                    get_pip_req_deps(reffed_req_path, verbose, excludes, pip_req_file_names)
+                )
 
     return deps_map
 

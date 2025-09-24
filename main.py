@@ -82,7 +82,7 @@ def main():
     excludes: list[str] = args.exclude
     pip_req_file_names: list[str] = [x.lower() for x in args.pip_req]
 
-    if no_ansi:
+    if no_ansi or not sys.stdout.isatty():
         global color_reset
         color_reset = ""
         global yellow

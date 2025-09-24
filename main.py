@@ -46,6 +46,7 @@ language_choices: list[Language] = [
 
 type NestedStrDict = dict[str, str | NestedStrDict]  # requires Python 3.12 or newer
 
+is_stdout_tty: bool = sys.stdout.isatty()
 searched_file_count: int = 0
 
 
@@ -82,7 +83,7 @@ def main():
     excludes: list[str] = args.exclude
     pip_req_file_names: list[str] = [x.lower() for x in args.pip_req]
 
-    if no_ansi or not sys.stdout.isatty():
+    if no_ansi or not is_stdout_tty:
         global color_reset
         color_reset = ""
         global yellow
@@ -177,11 +178,11 @@ def main():
                         deps_map[match].append(dep_file_path)
 
             searched_file_count += 1
-            if not verbose and sys.stdout.isatty():
+            if not verbose and is_stdout_tty:
                 print(end="\r                                                  \r")
                 print(end=f"Searched {searched_file_count} dependency list files", flush=True)
 
-    if not verbose and sys.stdout.isatty():
+    if not verbose and is_stdout_tty:
         print(end="\r                                                  \r")
     print(f"Searched {searched_file_count} dependency list files")
     for dep_name, dep_file_paths in deps_map.items():

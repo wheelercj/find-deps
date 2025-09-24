@@ -282,7 +282,13 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
     i += 1
     while i < len(contents) and contents[i] in (" ", "\t", "\n", "\r"):
         i += 1
-    if contents[i] != "[":
+    if i >= len(contents):
+        print(
+            f"{yellow}Warning: skipping file that appears to have invalid syntax:"
+            f" {setup_py_path}{color_reset}"
+        )
+        return set()
+    elif contents[i] != "[":
         # it's not a literal list
         print(
             f"{yellow}Warning: unable to parse the dependency list in {setup_py_path}{color_reset}"
@@ -302,9 +308,13 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
             else:
                 break
         i += 1
-    dep_list_end: int = i
-    if contents[dep_list_end] != "]":
+    if i >= len(contents) or contents[i] != "]":
+        print(
+            f"{yellow}Warning: skipping file that appears to have invalid syntax:"
+            f" {setup_py_path}{color_reset}"
+        )
         return set()
+    dep_list_end: int = i
 
     deps: list[str] = []
     missed_deps: bool = False
@@ -321,8 +331,8 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
                 elif contents[i] not in (" ", "\t", "\n", "\r", ","):
                     missed_deps = True
             i += 1
-        if contents[i] not in ("'", '"'):
-            return set()
+        if i == dep_list_end:
+            break
         str_start: int = i
         i += 1
         quote: str = contents[str_start]
@@ -339,6 +349,12 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
             else:
                 escaped = False
             i += 1
+        if i >= dep_list_end:
+            print(
+                f"{yellow}Warning: skipping file that appears to have invalid syntax:"
+                f" {setup_py_path}{color_reset}"
+            )
+            return set()
         str_end: int = i
         i += 1
 

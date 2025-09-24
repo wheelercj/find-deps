@@ -59,7 +59,7 @@ def main():
     parser.add_argument(
         "--exclude",
         action="append",
-        default=["Trash"],
+        default=["Trash", "malformed_package_json"],
         help="name of a file or folder to ignore; this option may be used multiple times",
     )
     parser.add_argument(

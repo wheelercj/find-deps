@@ -151,7 +151,7 @@ def main():
                     case "package.json":
                         if verbose:
                             print(f"Searching {dep_file_path}")
-                        pkg_deps: set[str] = get_js_package_json_deps(dep_file_path, verbose)
+                        pkg_deps: set[str] = get_js_package_json_deps(dep_file_path)
                         matches: set[str] = deps.intersection(pkg_deps)
                         for match in matches:
                             deps_map[match].append(dep_file_path)
@@ -455,7 +455,7 @@ def get_py_dep_names(dep_spec_list: list[str] | list[str | dict], verbose: bool)
     return deps
 
 
-def get_js_package_json_deps(file_path: Path, verbose: bool) -> set[str]:
+def get_js_package_json_deps(file_path: Path) -> set[str]:
     """Gets the names of all dependencies listed in a package.json"""
     try:
         text: str = file_path.read_text(encoding="utf8", errors="ignore").strip()
@@ -468,8 +468,7 @@ def get_js_package_json_deps(file_path: Path, verbose: bool) -> set[str]:
     try:
         pkg: dict[str, Any] = json.loads(text)
     except Exception as err:
-        if verbose:
-            print(f'{red}"{type(err).__name__}: {err}" when loading {file_path}{color_reset}')
+        print(f'{red}"{type(err).__name__}: {err}" when loading {file_path}{color_reset}')
         return set()
     else:
         if pkg:

@@ -178,11 +178,11 @@ def main():
                         deps_map[match].append(dep_file_path)
 
             searched_file_count += 1
-            if not verbose and is_stdout_tty:
+            if is_stdout_tty and not verbose:
                 print(end="\r                                                  \r")
                 print(end=f"Searched {searched_file_count} dependency list files", flush=True)
 
-    if not verbose and is_stdout_tty:
+    if is_stdout_tty and not verbose:
         print(end="\r                                                  \r")
     print(f"Searched {searched_file_count} dependency list files")
     for dep_name, dep_file_paths in deps_map.items():

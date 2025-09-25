@@ -441,9 +441,11 @@ def get_pip_req_deps(
                         f"{reffed_req_name} referenced in {dep_file_path}\n"
                         f"    Searching {reffed_req_path}"
                     )
-                deps_map.update(
-                    get_pip_req_deps(reffed_req_path, verbose, excludes, pip_req_file_names)
+                reffed_deps: defaultdict[str, list[Path]] = get_pip_req_deps(
+                    reffed_req_path, verbose, excludes, pip_req_file_names
                 )
+                for dep_name, paths in reffed_deps.items():
+                    deps_map[dep_name].extend(paths)
                 searched_file_count += 1
 
     return deps_map

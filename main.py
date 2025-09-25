@@ -77,7 +77,7 @@ def main():
 
     args = parser.parse_args()
     language: Language = args.language
-    deps: set[str] = set(args.deps)
+    deps_to_find: set[str] = set(args.deps)
     verbose: bool = args.verbose
     no_ansi: bool = args.no_ansi
     excludes: list[str] = args.exclude
@@ -114,6 +114,7 @@ def main():
             raise ValueError("outdated match")
 
     deps_map: defaultdict[str, list[Path]] = defaultdict(list)  # dep name -> dep file paths
+    all_found_dep_names: set[str] = set()
     for dirpath, dirnames, filenames in Path.home().walk():
         if dirpath.name in excludes:
             dirnames.clear()
@@ -130,21 +131,24 @@ def main():
                     if verbose:
                         print(f"Searching {dep_file_path}")
                     pyp_deps: set[str] = get_pyproject_deps(dep_file_path, verbose)
-                    matches: set[str] = deps.intersection(pyp_deps)
+                    all_found_dep_names.update(pyp_deps)
+                    matches: set[str] = deps_to_find.intersection(pyp_deps)
                     for match in matches:
                         deps_map[match].append(dep_file_path)
                 case "setup.cfg":
                     if verbose:
                         print(f"Searching {dep_file_path}")
                     setup_cfg_deps: set[str] = get_py_setup_cfg_deps(dep_file_path, verbose)
-                    matches: set[str] = deps.intersection(setup_cfg_deps)
+                    all_found_dep_names.update(setup_cfg_deps)
+                    matches: set[str] = deps_to_find.intersection(setup_cfg_deps)
                     for match in matches:
                         deps_map[match].append(dep_file_path)
                 case "setup.py":
                     if verbose:
                         print(f"Searching {dep_file_path}")
                     setup_py_deps: set[str] = get_setup_py_deps(dep_file_path)
-                    matches: set[str] = deps.intersection(setup_py_deps)
+                    all_found_dep_names.update(setup_py_deps)
+                    matches: set[str] = deps_to_find.intersection(setup_py_deps)
                     for match in matches:
                         deps_map[match].append(dep_file_path)
                 case x if x in pip_req_file_names:
@@ -153,27 +157,30 @@ def main():
                     req_deps: defaultdict[str, list[Path]] = get_pip_req_deps(
                         dep_file_path, verbose, excludes, pip_req_file_names
                     )
-                    matches: set[str] = deps.intersection(req_deps.keys())
+                    all_found_dep_names.update(req_deps)
+                    matches: set[str] = deps_to_find.intersection(req_deps.keys())
                     for match in matches:
                         deps_map[match].extend(req_deps[match])
                 case "package.json":
                     if verbose:
                         print(f"Searching {dep_file_path}")
                     pkg_deps: set[str] = get_js_package_json_deps(dep_file_path)
-                    matches: set[str] = deps.intersection(pkg_deps)
+                    all_found_dep_names.update(pkg_deps)
+                    matches: set[str] = deps_to_find.intersection(pkg_deps)
                     for match in matches:
                         deps_map[match].append(dep_file_path)
                 case "package-lock.json" | "npm-shrinkwrap.json":
                     if verbose:
                         print(f"Searching {dep_file_path}")
                     pl_deps: set[str] = get_js_package_lock_deps(dep_file_path)
-                    matches: set[str] = deps.intersection(pl_deps)
+                    all_found_dep_names.update(pl_deps)
+                    matches: set[str] = deps_to_find.intersection(pl_deps)
                     for match in matches:
                         deps_map[match].append(dep_file_path)
                 case _:
                     if verbose:
                         print(f"Naively searching {dep_file_path}")
-                    matches: set[str] = file_naively_contains(dep_file_path, deps)
+                    matches: set[str] = file_naively_contains(dep_file_path, deps_to_find)
                     for match in matches:
                         deps_map[match].append(dep_file_path)
 
@@ -185,6 +192,7 @@ def main():
     if is_stdout_tty and not verbose:
         print(end="\r                                                  \r")
     print(f"Searched {searched_file_count} dependency list files")
+    print(f"Found {len(all_found_dep_names)} unique dependencies")
     for dep_name, dep_file_paths in deps_map.items():
         print(f'"{dep_name}" found in {len(dep_file_paths)} files:')
         for p in dep_file_paths:

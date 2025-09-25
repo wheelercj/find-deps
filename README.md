@@ -5,6 +5,7 @@ Search all JavaScript or Python dependency lists on your device.
 ```text
 $ find-deps py mypy black
 Searched 262 dependency list files
+Found 205 unique dependencies
 "mypy" found in 5 files:
     /home/chris/Downloads/Python-3.13.1/Tools/requirements-dev.txt
     /home/chris/Downloads/Python-3.12.8/Tools/requirements-dev.txt

@@ -503,8 +503,8 @@ def get_js_package_json_deps(file_path: Path) -> set[str]:
 
     try:
         pkg: dict[str, Any] = json.loads(text)
-    except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when loading {file_path}{color_reset}')
+    except Exception:
+        print(f"{yellow}Warning: skipping file with invalid JSON: {file_path}{color_reset}")
         return set()
     else:
         if pkg:
@@ -532,9 +532,9 @@ def get_js_package_lock_deps(package_lock_file_path: Path) -> set[str]:
 
     try:
         pkg_lock: dict[str, Any] = json.loads(contents)
-    except Exception as err:
+    except Exception:
         print(
-            f'{red}"{type(err).__name__}: {err}" when loading'
+            f"{yellow}Warning: skipping file with invalid JSON:"
             f" {package_lock_file_path}{color_reset}"
         )
         return set()

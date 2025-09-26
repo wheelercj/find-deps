@@ -245,11 +245,15 @@ def get_pyproject_deps(pyproject_path: Path, verbose: bool) -> set[str]:
     deps: set[str] = set()
 
     try:
-        pyproject: dict[str, Any] = tomllib.loads(
-            pyproject_path.read_text(encoding="utf8", errors="ignore")
-        )
+        pyproject_s: str = pyproject_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
         print(f'{red}"{type(err).__name__}: {err}" when reading {pyproject_path}{color_reset}')
+        return set()
+
+    try:
+        pyproject: dict[str, Any] = tomllib.loads(pyproject_s)
+    except tomllib.TOMLDecodeError:
+        print(f"{yellow}Warning: skipping file with invalid TOML: {pyproject_path}{color_reset}")
         return set()
 
     if "project" in pyproject:
@@ -444,7 +448,13 @@ def get_py_inline_deps(file_path: Path, verbose: bool) -> set[str]:
             line[2:] if line.startswith("# ") else line[1:]
             for line in match["content"].splitlines(keepends=True)
         )
-        config: dict[str, Any] = tomllib.loads(config_s)
+
+        try:
+            config: dict[str, Any] = tomllib.loads(config_s)
+        except tomllib.TOMLDecodeError as err:
+            print(f'{yellow}Warning: skipping invalid TOML in {file_path}{color_reset}')
+            continue
+
         deps.update(get_py_dep_names(config["dependencies"], verbose))
 
     return deps

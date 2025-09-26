@@ -216,7 +216,7 @@ def main():
     if exclude_inline or language != "py":
         print(f"Searched {searched_file_count} dependency list files")
     else:
-        print(end=f"Searched {searched_file_count} files", flush=True)
+        print(f"Searched {searched_file_count} files")
 
     print(f"Found {len(all_found_dep_names)} unique dependencies")
     if not deps_map:

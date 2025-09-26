@@ -34,6 +34,9 @@ py_dep_spec_pattern: re.Pattern = re.compile(
     r"^\s*(?P<name>[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?)\b\s*(?P<extras>\[[^\[\]]*\])?\s*(?:@.+|(?P<versionspec>[\(<>=!~][^;]*)?).*"
 )
 pip_file_ref_pattern: re.Pattern = re.compile(r"^-r (\S+\.txt)$")
+py_inline_pattern: re.Pattern = re.compile(
+    r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$"
+)
 
 Language = Literal[
     "py",
@@ -69,6 +72,11 @@ def main():
         help="name of a file or folder to ignore; this option may be used multiple times",
     )
     parser.add_argument(
+        "--exclude-inline",
+        action="store_true",
+        help="ignore all dependency lists in inline script metadata in Python files",
+    )
+    parser.add_argument(
         "--pip-req",
         action="append",
         default=["requirements.txt", "requirements-dev.txt"],
@@ -81,6 +89,7 @@ def main():
     verbose: bool = args.verbose
     no_ansi: bool = args.no_ansi
     excludes: list[str] = args.exclude
+    exclude_inline: bool = args.exclude_inline
     pip_req_file_names: list[str] = [x.lower() for x in args.pip_req]
 
     if no_ansi or not is_stdout_tty:
@@ -120,42 +129,52 @@ def main():
             dirnames.clear()
             continue
 
-        for dep_file_name in dep_file_names:
-            if dep_file_name not in filenames:
+        for filename in filenames:
+            if filename not in dep_file_names and (
+                exclude_inline or not language == "py" or not filename.endswith(".py")
+            ):
                 continue
 
-            dep_file_path: Path = dirpath / dep_file_name
+            file_path: Path = dirpath / filename
 
-            match dep_file_name.lower():
+            match filename.lower():
                 case "pyproject.toml":
                     if verbose:
-                        print(f"Searching {dep_file_path}")
-                    pyp_deps: set[str] = get_pyproject_deps(dep_file_path, verbose)
+                        print(f"Searching {file_path}")
+                    pyp_deps: set[str] = get_pyproject_deps(file_path, verbose)
                     all_found_dep_names.update(pyp_deps)
                     matches: set[str] = deps_to_find.intersection(pyp_deps)
                     for match in matches:
-                        deps_map[match].append(dep_file_path)
+                        deps_map[match].append(file_path)
                 case "setup.cfg":
                     if verbose:
-                        print(f"Searching {dep_file_path}")
-                    setup_cfg_deps: set[str] = get_py_setup_cfg_deps(dep_file_path, verbose)
+                        print(f"Searching {file_path}")
+                    setup_cfg_deps: set[str] = get_py_setup_cfg_deps(file_path, verbose)
                     all_found_dep_names.update(setup_cfg_deps)
                     matches: set[str] = deps_to_find.intersection(setup_cfg_deps)
                     for match in matches:
-                        deps_map[match].append(dep_file_path)
+                        deps_map[match].append(file_path)
                 case "setup.py":
                     if verbose:
-                        print(f"Searching {dep_file_path}")
-                    setup_py_deps: set[str] = get_setup_py_deps(dep_file_path)
+                        print(f"Searching {file_path}")
+                    setup_py_deps: set[str] = get_setup_py_deps(file_path)
                     all_found_dep_names.update(setup_py_deps)
                     matches: set[str] = deps_to_find.intersection(setup_py_deps)
                     for match in matches:
-                        deps_map[match].append(dep_file_path)
+                        deps_map[match].append(file_path)
+                case x if x.endswith(".py"):
+                    if verbose:
+                        print(f"Searching {file_path}")
+                    inline_deps: set[str] = get_py_inline_deps(file_path, verbose)
+                    all_found_dep_names.update(inline_deps)
+                    matches: set[str] = deps_to_find.intersection(inline_deps)
+                    for match in matches:
+                        deps_map[match].append(file_path)
                 case x if x in pip_req_file_names:
                     if verbose:
-                        print(f"Searching {dep_file_path}")
+                        print(f"Searching {file_path}")
                     req_deps: defaultdict[str, list[Path]] = get_pip_req_deps(
-                        dep_file_path, verbose, excludes, pip_req_file_names
+                        file_path, verbose, excludes, pip_req_file_names
                     )
                     all_found_dep_names.update(req_deps)
                     matches: set[str] = deps_to_find.intersection(req_deps.keys())
@@ -163,36 +182,44 @@ def main():
                         deps_map[match].extend(req_deps[match])
                 case "package.json":
                     if verbose:
-                        print(f"Searching {dep_file_path}")
-                    pkg_deps: set[str] = get_js_package_json_deps(dep_file_path)
+                        print(f"Searching {file_path}")
+                    pkg_deps: set[str] = get_js_package_json_deps(file_path)
                     all_found_dep_names.update(pkg_deps)
                     matches: set[str] = deps_to_find.intersection(pkg_deps)
                     for match in matches:
-                        deps_map[match].append(dep_file_path)
+                        deps_map[match].append(file_path)
                 case "package-lock.json" | "npm-shrinkwrap.json":
                     if verbose:
-                        print(f"Searching {dep_file_path}")
-                    pl_deps: set[str] = get_js_package_lock_deps(dep_file_path)
+                        print(f"Searching {file_path}")
+                    pl_deps: set[str] = get_js_package_lock_deps(file_path)
                     all_found_dep_names.update(pl_deps)
                     matches: set[str] = deps_to_find.intersection(pl_deps)
                     for match in matches:
-                        deps_map[match].append(dep_file_path)
+                        deps_map[match].append(file_path)
                 case _:
                     if verbose:
-                        print(f"Naively searching {dep_file_path}")
-                    matches: set[str] = file_naively_contains(dep_file_path, deps_to_find)
+                        print(f"Naively searching {file_path}")
+                    matches: set[str] = file_naively_contains(file_path, deps_to_find)
                     for match in matches:
-                        deps_map[match].append(dep_file_path)
+                        deps_map[match].append(file_path)
 
             searched_file_count += 1
             if is_stdout_tty and not verbose:
                 print(end="\r                                                  \r")
-                print(end=f"Searched {searched_file_count} dependency list files", flush=True)
+                if exclude_inline or language != "py":
+                    print(end=f"Searched {searched_file_count} dependency list files", flush=True)
+                else:
+                    print(end=f"Searched {searched_file_count} files", flush=True)
 
     if is_stdout_tty and not verbose:
         print(end="\r                                                  \r")
-    print(f"Searched {searched_file_count} dependency list files")
+    if exclude_inline or language != "py":
+        print(f"Searched {searched_file_count} dependency list files")
+    else:
+        print(end=f"Searched {searched_file_count} files", flush=True)
+
     print(f"Found {len(all_found_dep_names)} unique dependencies")
+
     for dep_name, dep_file_paths in deps_map.items():
         print(f'"{dep_name}" found in {len(dep_file_paths)} files:')
         for p in dep_file_paths:
@@ -396,6 +423,29 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
         )
 
     return set(deps)
+
+
+def get_py_inline_deps(file_path: Path, verbose: bool) -> set[str]:
+    """Gets the names of all dependencies listed in a Python file's inline script metadata"""
+    # https://packaging.python.org/en/latest/specifications/inline-script-metadata/
+    try:
+        file_contents: str = file_path.read_text(encoding="utf8", errors="ignore")
+    except Exception as err:
+        print(f'{red}"{type(err).__name__}: {err}" when reading {file_path}{color_reset}')
+        return set()
+    if not file_contents:
+        return set()
+
+    deps: set[str] = set()
+    for match in py_inline_pattern.finditer(file_contents):
+        config_s: str = "".join(
+            line[2:] if line.startswith("# ") else line[1:]
+            for line in match["content"].splitlines(keepends=True)
+        )
+        config: dict[str, Any] = tomllib.loads(config_s)
+        deps.update(get_py_dep_names(config["dependencies"], verbose))
+
+    return deps
 
 
 def get_pip_req_deps(

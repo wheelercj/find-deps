@@ -105,6 +105,8 @@ def main():
         case "py":
             if "pyproject.toml" not in excludes:
                 dep_file_names.append("pyproject.toml")
+            if "uv.lock" not in excludes:
+                dep_file_names.append("uv.lock")
             if "setup.cfg" not in excludes:
                 dep_file_names.append("setup.cfg")
             if "setup.py" not in excludes:
@@ -144,6 +146,14 @@ def main():
                     pyp_deps: set[str] = get_pyproject_deps(file_path, verbose)
                     all_found_dep_names.update(pyp_deps)
                     matches: set[str] = deps_to_find.intersection(pyp_deps)
+                    for match in matches:
+                        deps_map[match].append(file_path)
+                case "uv.lock":
+                    if verbose:
+                        print(f"Searching {file_path}")
+                    uv_lock_deps: set[str] = get_uv_lock_deps(file_path)
+                    all_found_dep_names.update(uv_lock_deps)
+                    matches: set[str] = deps_to_find.intersection(uv_lock_deps)
                     for match in matches:
                         deps_map[match].append(file_path)
                 case "setup.cfg":
@@ -275,6 +285,30 @@ def get_pyproject_deps(pyproject_path: Path, verbose: bool) -> set[str]:
         if "requires" in build_sys:
             requires: list[str | dict] = build_sys["requires"]
             deps.update(get_py_dep_names(requires, verbose))
+
+    return deps
+
+
+def get_uv_lock_deps(uv_lock_path: Path) -> set[str]:
+    """Gets the names of all dependencies listed in a uv.lock"""
+    try:
+        contents: str = uv_lock_path.read_text(encoding="utf8", errors="ignore")
+    except Exception as err:
+        print(f'{red}"{type(err).__name__}: {err}" when reading {uv_lock_path}{color_reset}')
+        return set()
+    if not contents:
+        return set()
+
+    try:
+        uv_lock: dict[str, Any] = tomllib.loads(contents)
+    except tomllib.TOMLDecodeError:
+        print(f"{yellow}Warning: skipping file with invalid TOML: {uv_lock_path}{color_reset}")
+        return set()
+
+    deps: set[str] = set()
+
+    pkgs: list[dict[str, Any]] = uv_lock["package"]
+    deps.update(pkg["name"] for pkg in pkgs)
 
     return deps
 
@@ -451,8 +485,8 @@ def get_py_inline_deps(file_path: Path, verbose: bool) -> set[str]:
 
         try:
             config: dict[str, Any] = tomllib.loads(config_s)
-        except tomllib.TOMLDecodeError as err:
-            print(f'{yellow}Warning: skipping invalid TOML in {file_path}{color_reset}')
+        except tomllib.TOMLDecodeError:
+            print(f"{yellow}Warning: skipping invalid TOML in {file_path}{color_reset}")
             continue
 
         deps.update(get_py_dep_names(config["dependencies"], verbose))

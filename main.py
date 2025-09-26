@@ -259,6 +259,8 @@ def get_pyproject_deps(pyproject_path: Path, verbose: bool) -> set[str]:
     except Exception as err:
         print(f'{red}"{type(err).__name__}: {err}" when reading {pyproject_path}{color_reset}')
         return set()
+    if not pyproject_s:
+        return set()
 
     try:
         pyproject: dict[str, Any] = tomllib.loads(pyproject_s)

@@ -575,7 +575,7 @@ def get_js_package_json_deps(file_path: Path) -> set[str]:
 
     try:
         pkg: dict[str, Any] = json.loads(text)
-    except Exception:
+    except json.JSONDecodeError:
         print(f"{yellow}Warning: skipping file with invalid JSON: {file_path}{color_reset}")
         return set()
     else:
@@ -604,7 +604,7 @@ def get_js_package_lock_deps(package_lock_file_path: Path) -> set[str]:
 
     try:
         pkg_lock: dict[str, Any] = json.loads(contents)
-    except Exception:
+    except json.JSONDecodeError:
         print(
             f"{yellow}Warning: skipping file with invalid JSON:"
             f" {package_lock_file_path}{color_reset}"

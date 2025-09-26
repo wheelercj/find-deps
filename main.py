@@ -219,6 +219,8 @@ def main():
         print(end=f"Searched {searched_file_count} files", flush=True)
 
     print(f"Found {len(all_found_dep_names)} unique dependencies")
+    if not deps_map:
+        print("None of the found dependencies match your query")
 
     for dep_name, dep_file_paths in deps_map.items():
         print(f'"{dep_name}" found in {len(dep_file_paths)} files:')

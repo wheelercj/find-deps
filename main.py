@@ -287,6 +287,20 @@ def get_pyproject_deps(pyproject_path: Path, verbose: bool) -> set[str]:
         if "requires" in build_sys:
             requires: list[str | dict] = build_sys["requires"]
             deps.update(get_py_dep_names(requires, verbose))
+    if "tool" in pyproject:
+        tool: dict[str, Any] = pyproject["tool"]
+        if "poetry" in tool:
+            poetry: dict[str, Any] = tool["poetry"]
+            # https://python-poetry.org/docs/dependency-specification/
+            if "dependencies" in poetry:
+                poetry_deps: dict[str, Any] = poetry["dependencies"]
+                deps.update(poetry_deps.keys())
+            if "group" in poetry:
+                poetry_groups: dict[str, Any] = poetry["group"]
+                for group in poetry_groups.values():
+                    if "dependencies" in group:
+                        group_deps: dict[str, str] = group["dependencies"]
+                        deps.update(group_deps.keys())
 
     return deps
 

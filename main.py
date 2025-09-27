@@ -121,6 +121,10 @@ def main():
                 dep_file_names.append("package-lock.json")
             if "npm-shrinkwrap.json" not in excludes:
                 dep_file_names.append("npm-shrinkwrap.json")
+            if "deno.json" not in excludes:
+                dep_file_names.append("deno.json")
+            if "deno.jsonc" not in excludes:
+                dep_file_names.append("deno.jsonc")
         case _:
             raise ValueError("outdated match")
 
@@ -204,6 +208,14 @@ def main():
                     pl_deps: set[str] = get_js_package_lock_deps(file_path)
                     all_found_dep_names.update(pl_deps)
                     matches: set[str] = deps_to_find.intersection(pl_deps)
+                    for match in matches:
+                        deps_map[match].append(file_path)
+                case "deno.json" | "deno.jsonc":
+                    if verbose:
+                        print(f"Searching {file_path}")
+                    deno_deps: set[str] = get_deno_deps(file_path)
+                    all_found_dep_names.update(deno_deps)
+                    matches: set[str] = deps_to_find.intersection(deno_deps)
                     for match in matches:
                         deps_map[match].append(file_path)
                 case _:
@@ -723,6 +735,32 @@ def get_js_override_names(pkg_overrides: NestedStrDict) -> set[str]:
             overrides.update(get_js_override_names(v))
 
     return overrides
+
+
+def get_deno_deps(deno_json_path: Path) -> set[str]:
+    """Gets the names of all dependencies listed in a deno.json or deno.jsonc"""
+    # https://docs.deno.com/runtime/fundamentals/configuration/
+    try:
+        deno_s: str = deno_json_path.read_text(encoding="utf8", errors="ignore")
+    except Exception as err:
+        print(f'{red}"{type(err).__name__}: {err}" when reading {deno_json_path}{color_reset}')
+        return set()
+    if not deno_s:
+        return set()
+
+    try:
+        deno: dict[str, Any] = json.loads(deno_s)
+    except json.JSONDecodeError:
+        print(f"{yellow}Warning: skipping file with invalid JSON: {deno_json_path}{color_reset}")
+        return set()
+
+    deps: set[str] = set()
+
+    if "imports" in deno:
+        imports: dict[str, str] = deno["imports"]
+        deps.update(imports.keys())
+
+    return deps
 
 
 if __name__ == "__main__":

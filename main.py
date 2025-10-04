@@ -255,7 +255,7 @@ def file_naively_contains(file_path: Path, deps: set[str]) -> set[str]:
     try:
         contents: str = file_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {file_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {file_path}{color_reset}")
         return set()
 
     return set(dep for dep in deps if dep in contents)
@@ -269,7 +269,7 @@ def get_pyproject_deps(pyproject_path: Path, verbose: bool) -> set[str]:
     try:
         pyproject_s: str = pyproject_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {pyproject_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {pyproject_path}{color_reset}")
         return set()
     if not pyproject_s:
         return set()
@@ -322,7 +322,7 @@ def get_uv_lock_deps(uv_lock_path: Path) -> set[str]:
     try:
         contents: str = uv_lock_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {uv_lock_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {uv_lock_path}{color_reset}")
         return set()
     if not contents:
         return set()
@@ -347,7 +347,7 @@ def get_py_setup_cfg_deps(setup_cfg_path: Path, verbose: bool) -> set[str]:
     try:
         contents: str = setup_cfg_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {setup_cfg_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {setup_cfg_path}{color_reset}")
         return set()
     if not contents:
         return set()
@@ -356,7 +356,7 @@ def get_py_setup_cfg_deps(setup_cfg_path: Path, verbose: bool) -> set[str]:
     try:
         config.read_string(contents)
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when loading {setup_cfg_path}{color_reset}')
+        print(f"{red}{repr(err)} when loading {setup_cfg_path}{color_reset}")
         return set()
 
     if "options" not in config:
@@ -384,7 +384,7 @@ def get_setup_py_deps(setup_py_path: Path) -> set[str]:
     try:
         contents: str = setup_py_path.read_text(encoding="utf8", errors="ignore").strip()
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {setup_py_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {setup_py_path}{color_reset}")
         return set()
     if not contents:
         return set()
@@ -499,7 +499,7 @@ def get_py_inline_deps(file_path: Path, verbose: bool) -> set[str]:
     try:
         file_contents: str = file_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {file_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {file_path}{color_reset}")
         return set()
     if not file_contents:
         return set()
@@ -535,7 +535,7 @@ def get_pip_req_deps(
             encoding="utf8", errors="ignore"
         ).splitlines()
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {dep_file_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {dep_file_path}{color_reset}")
         return defaultdict()
 
     for line in req_lines:
@@ -630,7 +630,7 @@ def get_js_package_json_deps(file_path: Path) -> set[str]:
     try:
         text: str = file_path.read_text(encoding="utf8", errors="ignore").strip()
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {file_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {file_path}{color_reset}")
         return set()
     if not text:
         return set()
@@ -656,10 +656,7 @@ def get_js_package_lock_deps(package_lock_file_path: Path) -> set[str]:
     try:
         contents: str = package_lock_file_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(
-            f'{red}"{type(err).__name__}: {err}" when reading'
-            f" {package_lock_file_path}{color_reset}"
-        )
+        print(f"{red}{repr(err)} when reading {package_lock_file_path}{color_reset}")
         return set()
     if not contents:
         return set()
@@ -743,7 +740,7 @@ def get_deno_deps(deno_json_path: Path) -> set[str]:
     try:
         deno_s: str = deno_json_path.read_text(encoding="utf8", errors="ignore")
     except Exception as err:
-        print(f'{red}"{type(err).__name__}: {err}" when reading {deno_json_path}{color_reset}')
+        print(f"{red}{repr(err)} when reading {deno_json_path}{color_reset}")
         return set()
     if not deno_s:
         return set()

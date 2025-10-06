@@ -103,28 +103,27 @@ def main():
     dep_file_names: list[str] = []
     match language:
         case "py":
-            if "pyproject.toml" not in excludes:
-                dep_file_names.append("pyproject.toml")
-            if "uv.lock" not in excludes:
-                dep_file_names.append("uv.lock")
-            if "setup.cfg" not in excludes:
-                dep_file_names.append("setup.cfg")
-            if "setup.py" not in excludes:
-                dep_file_names.append("setup.py")
-            for file_name in pip_req_file_names:
+            py_file_names: list[str] = [
+                "pyproject.toml",
+                "uv.lock",
+                "setup.cfg",
+                "setup.py",
+                *pip_req_file_names,
+            ]
+            for file_name in py_file_names:
                 if file_name not in excludes:
                     dep_file_names.append(file_name)
         case "js":
-            if "package.json" not in excludes:
-                dep_file_names.append("package.json")
-            if "package-lock.json" not in excludes:
-                dep_file_names.append("package-lock.json")
-            if "npm-shrinkwrap.json" not in excludes:
-                dep_file_names.append("npm-shrinkwrap.json")
-            if "deno.json" not in excludes:
-                dep_file_names.append("deno.json")
-            if "deno.jsonc" not in excludes:
-                dep_file_names.append("deno.jsonc")
+            js_file_names: list[str] = [
+                "package.json",
+                "package-lock.json",
+                "npm-shrinkwrap.json",
+                "deno.json",
+                "deno.jsonc",
+            ]
+            for file_name in js_file_names:
+                if file_name not in excludes:
+                    dep_file_names.append(file_name)
         case _:
             raise ValueError("outdated match")
 

@@ -27,3 +27,34 @@ Find-deps searches dependency files like `package-lock.json` and `pyproject.toml
 - `git clone https://github.com/wheelercj/find-deps.git` and then `python3.13 find-deps/main.py --help`
 
 Find-deps has no third-party dependencies.
+
+## Files searched by find-deps
+
+**Python**
+
+- ✅ pyproject.toml
+- ✅ [inline script metadata](https://packaging.python.org/en/latest/specifications/inline-script-metadata/)
+- ✅ setup.cfg
+- ✅ setup.py
+- ✅ uv.lock
+- ✅ requirements.txt
+- ✅ requirements-dev.txt
+- ✅ any pip requirements files referenced in a searched pip requirements file
+- ✅ more pip requirements files can be searched by using the `--pip-req` option
+- 🚧 poetry.lock
+- 🚧 .pre-commit-config.yaml
+- 🚧 ...and many others
+
+**JavaScript**
+
+- ✅ package.json
+- ✅ package-lock.json
+- ✅ npm-shrinkwrap.json
+- ✅ deno.json
+- ✅ deno.jsonc
+- 🚧 deno.lock
+- 🚧 yarn.lock
+- 🚧 pnpm-lock.yaml
+- 🚧 bun.lock
+- 🚧 hidden lockfiles
+- 🚧 ...and many others

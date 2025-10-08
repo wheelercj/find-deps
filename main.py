@@ -692,11 +692,13 @@ def get_js_package_deps(pkg: dict[str, Any]) -> set[str]:
         peer_deps: dict[str, str] = pkg["peerDependencies"]
         deps.update(peer_deps.keys())
     if "bundleDependencies" in pkg:
-        bundle_deps: list[str] = pkg["bundleDependencies"]
-        deps.update(bundle_deps)
+        bundle_deps: list[str] | bool = pkg["bundleDependencies"]
+        if isinstance(bundle_deps, list):
+            deps.update(bundle_deps)
     if "bundledDependencies" in pkg:
-        bundled_deps: list[str] = pkg["bundledDependencies"]
-        deps.update(bundled_deps)
+        bundled_deps: list[str] | bool = pkg["bundledDependencies"]
+        if isinstance(bundled_deps, list):
+            deps.update(bundled_deps)
     if "optionalDependencies" in pkg:
         optional_deps: dict[str, str] = pkg["optionalDependencies"]
         deps.update(optional_deps.keys())

@@ -37,6 +37,8 @@ pip_file_ref_pattern: re.Pattern = re.compile(r"^-r (\S+\.txt)$")
 py_inline_pattern: re.Pattern = re.compile(
     r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$"
 )
+jsonc_line_comment_pattern: re.Pattern = re.compile(r"//[^\n]*")
+jsonc_multiline_comment_pattern: re.Pattern = re.compile(r"/\*.*?\*/")
 
 Language = Literal[
     "py",
@@ -743,6 +745,11 @@ def get_deno_deps(deno_json_path: Path) -> set[str]:
         return set()
     if not deno_s:
         return set()
+
+    if deno_json_path.suffix == ".jsonc":
+        # remove all comments
+        deno_s = jsonc_line_comment_pattern.sub("", deno_s)
+        deno_s = jsonc_multiline_comment_pattern.sub("", deno_s)
 
     try:
         deno: dict[str, Any] = json.loads(deno_s)

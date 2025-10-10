@@ -102,7 +102,7 @@ def main():
         global red
         red = ""
 
-    dep_file_names: list[str] = []
+    dep_file_names: set[str] = set()
     match language:
         case "py":
             py_file_names: list[str] = [
@@ -114,7 +114,7 @@ def main():
             ]
             for file_name in py_file_names:
                 if file_name not in excludes:
-                    dep_file_names.append(file_name)
+                    dep_file_names.add(file_name)
         case "js":
             js_file_names: list[str] = [
                 "package.json",
@@ -125,7 +125,7 @@ def main():
             ]
             for file_name in js_file_names:
                 if file_name not in excludes:
-                    dep_file_names.append(file_name)
+                    dep_file_names.add(file_name)
         case _:
             raise ValueError("outdated match")
 
